@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose only one public port (Render requirement)
-EXPOSE 8000
+EXPOSE 10000
 
 # Start FastAPI (Internal) and Streamlit (Public)
-CMD ["bash", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port 8080 & streamlit run frontend/app.py --server.port 8000 --server.enableCORS false --server.enableXsrfProtection false"]
+CMD ["bash", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port 8080 & streamlit run frontend/app.py --server.port 10000 --server.enableCORS false --server.enableXsrfProtection false"]
