@@ -11,14 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy app files
 COPY . .
 
-# Install Caddy (Reverse Proxy)
-RUN apt-get update && apt-get install -y caddy
+# Expose only one public port (Render requirement)
+EXPOSE 8000
 
-# Copy Caddyfile
-COPY Caddyfile /etc/caddy/Caddyfile
-
-# Expose Render's dynamic port (only one allowed)
-EXPOSE $PORT
-
-# Start FastAPI, Streamlit, and Caddy
-CMD ["bash", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port 8080 & streamlit run frontend/app.py --server.port 8501 --server.enableCORS false --server.enableXsrfProtection false & caddy run --config /etc/caddy/Caddyfile"]
+# Start FastAPI (Internal) and Streamlit (Public)
+CMD ["bash", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port 8080 & streamlit run frontend/app.py --server.port 8000 --server.enableCORS false --server.enableXsrfProtection false"]
