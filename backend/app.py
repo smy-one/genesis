@@ -9,6 +9,11 @@ from dotenv import load_dotenv
 import pandas as pd
 
 app = FastAPI()
+
+print("Routes:")
+for route in app.router.routes:
+    print(route.path)
+
 #os.environ['GOOGLE_CREDENTIALS'] = ''
 
 load_dotenv()
@@ -18,22 +23,51 @@ for key, value in os.environ.items():
     print(f"{key}={value}")
 print(f"end")
 """
-
+print("Hello")
 GOOGLE_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS")
 SERVICE_ACCOUNT_INFO = json.loads(GOOGLE_CREDENTIALS, strict=False)  # Store JSON in Render env vars
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
 client = gspread.authorize(creds)
 print(f"Client email {SERVICE_ACCOUNT_INFO['client_email']}")
-sheet = client.open_by_key(init_genesis.SHEET_ID).worksheet(init_genesis.SADHAK_SHEET)
+sadhak_sheet = client.open_by_key(init_genesis.SHEET_ID).worksheet(init_genesis.SADHAK_SHEET)
+pg_sheet = client.open_by_key(init_genesis.SHEET_ID).worksheet(init_genesis.PG_SHEET)
 
-# API Endpoint to Read Google Sheet Data
-@app.get("/read-sheet/")
-def read_sheet():
-    data = sheet.get_all_records()
+# API Endpoint to sadhak sheet
+@app.get("/get-sadhaks/")
+def get_sadhaks():
+    data = sadhak_sheet.get_all_records()
     df = pd.DataFrame(data)
-    num_sadhaks = df["First name"].astype(str).str.strip().ne("").cumprod().sum()
-    return {"data": df.iloc[:num_sadhaks]}
+
+    if "First name" in df.columns:  # Ensure column exists
+        num_sadhaks = df["First name"].astype(str).str.strip().ne("").cumprod().sum()
+        df = df.iloc[:num_sadhaks]  # Keep only non-empty rows
+
+    return {"data": df.to_dict(orient="records")}  # ✅ Fix: Convert to JSON-compatible format
+
+# API Endpoint to pg sheet
+@app.get("/get-pgs/")
+def get_pgs():
+    data = pg_sheet.get_all_records()
+    df = pd.DataFrame(data)
+
+    if "PG" in df.columns:  # Ensure column exists
+        num_pgs = df["PG"].astype(str).str.strip().ne("").cumprod().sum()
+        df = df.iloc[:num_pgs]  # Keep only non-empty rows
+
+    return {"data": df.to_dict(orient="records")}  # ✅ Fix: Convert to JSON-compatible format
+
+@app.put("/add-sadhak/")
+def add_sadhak():
+    return {}
+
+@app.put("/remove-sadhak/")
+def remove_sadhak():
+    return {}
+
+@app.put("/move-sadhak/")
+def move_sadhak():
+    return {}
 
 # WebSocket for Real-Time Updates
 @app.websocket("/ws")
